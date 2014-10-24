@@ -2,9 +2,10 @@
   (:require [clojure.browser.repl :as repl]
             [clojure.browser.dom  :as dom]
             [clojure.browser.event :as ev]
-            [goog.events :as events]))
+            [goog.events :as events]
+            [weasel.repl :as ws-repl]))
 
-(enable-console-print!)
+;;(enable-console-print!)
 
 ;; Constants and State
 
@@ -214,6 +215,7 @@
 
 ;; To connect a browser-attached repl:
 ;; (repl/connect "http://localhost:9000/repl")
+(ws-repl/connect "ws://localhost:9005" :verbose true)
 
 ;; Debugging:
 ;; (in-ns 'todo-cljs.todos)
