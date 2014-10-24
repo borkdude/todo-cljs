@@ -7,7 +7,7 @@
   :source-paths ["src/clj"]
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2342"]
-                 [weasel "0.4.1"]
+                 [weasel "0.4.2-SNAPSHOT"]
                  [com.cemerick/piggieback "0.1.3"]]
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
 
