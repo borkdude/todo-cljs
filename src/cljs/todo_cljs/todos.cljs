@@ -5,7 +5,7 @@
             [goog.events :as events]
             [weasel.repl :as ws-repl]))
 
-;;(enable-console-print!)
+(enable-console-print!)
 
 ;; Constants and State
 
@@ -17,15 +17,14 @@
 
 (defn save-todos []
   (.setItem js/localStorage STORAGE_NAME
-            (.stringify js/JSON (clj->js @todo-list))))
+            (pr-str @todo-list)))
 
 (defn load-todos []
-  (if (not (seq (.getItem js/localStorage STORAGE_NAME)))
-    (do
+  (let [local-storage (.getItem js/localStorage STORAGE_NAME)]
+    (if (empty? local-storage)
       (reset! todo-list [])
-      (save-todos)))
-  (reset! todo-list
-         (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
+      (reset! todo-list
+              (cljs.reader/read-string local-storage)))))
 
 ;; HELPER: shortcut for dom/get-element
 (defn by-id [id] (dom/get-element id))
