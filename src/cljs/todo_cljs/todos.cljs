@@ -42,19 +42,19 @@
 ;; HELPER: :total tasks, :completed tasks and :left tasks (not completed)
 (defn stats []
   (let [total     (count @todo-list)
-        completed (count (filter #(= true (% "completed")) @todo-list))
+        completed (count (filter #(= true (% :completed)) @todo-list))
         left      (- total completed)]
     {:total total :completed completed :left left}))
 
 ;; HELPER: updates a todo by its id, changes puts a new val for the attr
 (defn update-attr [id attr val]
   (let [updated
-        (vec (map #(if (= (% "id") id) (conj % {attr val}) %) @todo-list))]
+        (vec (map #(if (= (% :id) id) (conj % {attr val}) %) @todo-list))]
     (reset! todo-list updated)))
 
 (defn remove-todo-by-id [id]
   (reset! todo-list
-          (vec (filter #(not= (% "id") id) @todo-list))))
+          (vec (filter #(not= (% :id) id) @todo-list))))
 
 ;; UI and handlers
 
@@ -66,7 +66,7 @@
   (let [checkbox (.-target ev)
         id       (.getAttribute checkbox "data-todo-id")
         checked  (.-checked checkbox)]
-    (update-attr id "completed" checked)))
+    (update-attr id :completed checked)))
 
 (defn todo-content-handler [ev]
   (let [id    (.getAttribute (.-target ev) "data-todo-id")
@@ -82,7 +82,7 @@
     (if (seq text)
       (if (= ENTER_KEY (.-keyCode ev))
         (do
-          (update-attr id "title" text)))
+          (update-attr id :title text)))
       (do
         (remove-todo-by-id id)))))
 
@@ -91,7 +91,7 @@
         text  (.trim (.-value input))
         id    (apply str (drop 6 (.-id input)))] ;; drops "input_"
     (do
-      (update-attr id "title" text))))
+      (update-attr id :title text))))
 
 (defn redraw-todos-ui []
   (set! (.-innerHTML (by-id "todo-list")) "")
@@ -101,17 +101,17 @@
    (map
     (fn [todo]
       (let [
-        id          (todo "id")
-        li          (elemt "li" {"id" (str "li_" id)})
+        id          (todo :id)
+        li          (elemt "li" {:id (str "li_" id)})
         checkbox    (elemt "input" {"class" "toggle" "data-todo-id" id
                                    "type" "checkbox"})
         label       (elemt "label" {"data-todo-id" id})
         delete-link (elemt "button" {"class" "destroy" "data-todo-id" id})
         div-display (elemt "div" {"class" "view" "data-todo-id" id})
-        input-todo  (elemt "input" {"id" (str "input_" id) "class" "edit"})]
+        input-todo  (elemt "input" {:id (str "input_" id) "class" "edit"})]
 
-        (dom/set-text label (todo "title"))
-        (dom/set-value input-todo (todo "title"))
+        (dom/set-text label (todo :title))
+        (dom/set-value input-todo (todo :title))
 
         (ev/listen checkbox "change" checkbox-change-handler)
         (ev/listen label "dblclick" todo-content-handler)
@@ -122,7 +122,7 @@
         (dom/append div-display checkbox label delete-link)
         (dom/append li div-display input-todo)
 
-        (if (todo "completed")
+        (if (todo :completed)
           (do
             (dom/set-properties li {"class" "complete"})
             (dom/set-properties checkbox {"checked" true})))
@@ -134,18 +134,18 @@
   (let [stat (stats)
         text (str " " (if (= 1 (:left stat)) "item" "items") " left")
         number (dom/element "strong" (str (:left stat)))
-        remaining (dom/element "span" {"id" "todo-count"})
+        remaining (dom/element "span" {:id "todo-count"})
         footer (by-id "footer")]
     (dom/append remaining number text)
     (dom/append footer remaining)))
 
 (defn clear-click-handler []
-  (reset! todo-list (filter #(not (% "completed")) @todo-list)))
+  (reset! todo-list (filter #(not (% :completed)) @todo-list)))
 
 (defn draw-todo-clear []
   (let [footer (by-id "footer")
         message (str "Clear completed (" (:completed (stats)) ")")
-        button (dom/element "button" {"id" "clear-completed"} message)]
+        button (dom/element "button" {:id "clear-completed"} message)]
     (ev/listen button "click" clear-click-handler)
     (dom/append footer button)))
 
@@ -160,7 +160,7 @@
 
 (defn change-toggle-all-checkbox-state []
   (let [toggle-all  (by-id "toggle-all")
-        all-checked (every? #(= true (% "completed")) @todo-list)]
+        all-checked (every? #(= true (% :completed)) @todo-list)]
     (set! (.-checked toggle-all) all-checked)))
 
 (defn rerender [o n]
@@ -187,9 +187,9 @@
     (if (seq tt)
       (do
         (swap! todo-list conj
-               {"id" (get-uuid)
-                "title" tt
-                "completed" false})))))
+               {:id (get-uuid)
+                :title tt
+                :completed false})))))
 
 (defn new-todo-handler [ev]
   (if (= ENTER_KEY (.-keyCode ev))
@@ -197,7 +197,7 @@
 
 (defn toggle-all-handler [ev]
   (let [checked (.-checked (.-target ev))
-        toggled (map #(assoc % "completed" checked) @todo-list)]
+        toggled (map #(assoc % :completed checked) @todo-list)]
     (reset! todo-list toggled)))
 
 (defn add-event-listeners []
