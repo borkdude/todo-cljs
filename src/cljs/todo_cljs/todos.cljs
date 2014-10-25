@@ -14,11 +14,11 @@
 (def STORAGE_NAME "todos-cljs")
 (def todo-list (atom [])) ;; ALL APPLICATION STATE LIVES HERE
 
-(declare refresh-data)
+(declare rerender)
 
 (add-watch todo-list ::refresh-data
            (fn [k a o n]
-             (refresh-data o n)))
+             (rerender o n)))
 
 ;; State management
 
@@ -163,7 +163,7 @@
         all-checked (every? #(= true (% "completed")) @todo-list)]
     (set! (.-checked toggle-all) all-checked)))
 
-(defn refresh-data [o n]
+(defn rerender [o n]
   ;; calculate some diff between old and new and do clever update...
   ;; or just re-render everything, what the hell
   (save-todos)
