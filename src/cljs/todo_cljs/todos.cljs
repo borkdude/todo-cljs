@@ -1,17 +1,24 @@
 (ns todo_cljs.todos
-  (:require [clojure.browser.repl :as repl]
-            [clojure.browser.dom  :as dom]
+  (:require [clojure.browser.dom  :as dom]
             [clojure.browser.event :as ev]
             [goog.events :as events]
             [weasel.repl :as ws-repl]))
 
 (enable-console-print!)
+(set! dom/log (constantly nil))
+(set! dom/log-obj (constantly nil))
 
 ;; Constants and State
 
 (def ENTER_KEY 13)
 (def STORAGE_NAME "todos-cljs")
 (def todo-list (atom [])) ;; ALL APPLICATION STATE LIVES HERE
+
+(declare refresh-data)
+
+(add-watch todo-list ::refresh-data
+           (fn [k a o n]
+             (refresh-data o n)))
 
 ;; State management
 
@@ -51,19 +58,15 @@
 
 ;; UI and handlers
 
-(declare refresh-data)
-
 (defn delete-click-handler [ev]
   (let [id (.getAttribute (.-target ev) "data-todo-id")]
-    (remove-todo-by-id id)
-    (refresh-data)))
+    (remove-todo-by-id id)))
 
 (defn checkbox-change-handler [ev]
   (let [checkbox (.-target ev)
         id       (.getAttribute checkbox "data-todo-id")
         checked  (.-checked checkbox)]
-    (update-attr id "completed" checked)
-    (refresh-data)))
+    (update-attr id "completed" checked)))
 
 (defn todo-content-handler [ev]
   (let [id    (.getAttribute (.-target ev) "data-todo-id")
@@ -79,19 +82,16 @@
     (if (seq text)
       (if (= ENTER_KEY (.-keyCode ev))
         (do
-          (update-attr id "title" text)
-          (refresh-data)))
+          (update-attr id "title" text)))
       (do
-        (remove-todo-by-id id)
-        (refresh-data)))))
+        (remove-todo-by-id id)))))
 
 (defn input-todo-blur-handler [ev]
   (let [input (.-target ev)
         text  (.trim (.-value input))
         id    (apply str (drop 6 (.-id input)))] ;; drops "input_"
     (do
-      (update-attr id "title" text)
-      (refresh-data))))
+      (update-attr id "title" text))))
 
 (defn redraw-todos-ui []
   (set! (.-innerHTML (by-id "todo-list")) "")
@@ -140,8 +140,7 @@
     (dom/append footer remaining)))
 
 (defn clear-click-handler []
-  (reset! todo-list (filter #(not (% "completed")) @todo-list))
-  (refresh-data))
+  (reset! todo-list (filter #(not (% "completed")) @todo-list)))
 
 (defn draw-todo-clear []
   (let [footer (by-id "footer")
@@ -164,7 +163,9 @@
         all-checked (every? #(= true (% "completed")) @todo-list)]
     (set! (.-checked toggle-all) all-checked)))
 
-(defn refresh-data []
+(defn refresh-data [o n]
+  ;; calculate some diff between old and new and do clever update...
+  ;; or just re-render everything, what the hell
   (save-todos)
   (redraw-todos-ui)
   (redraw-status-ui)
@@ -185,8 +186,10 @@
   (let [tt (.trim text)]
     (if (seq tt)
       (do
-        (swap! todo-list conj {"id" (get-uuid) "title" tt "completed" false})
-        (refresh-data)))))
+        (swap! todo-list conj
+               {"id" (get-uuid)
+                "title" tt
+                "completed" false})))))
 
 (defn new-todo-handler [ev]
   (if (= ENTER_KEY (.-keyCode ev))
@@ -195,8 +198,7 @@
 (defn toggle-all-handler [ev]
   (let [checked (.-checked (.-target ev))
         toggled (map #(assoc % "completed" checked) @todo-list)]
-    (reset! todo-list toggled)
-    (refresh-data)))
+    (reset! todo-list toggled)))
 
 (defn add-event-listeners []
   (ev/listen (by-id "new-todo") "keypress" new-todo-handler)
@@ -205,7 +207,6 @@
 
 (defn window-load-handler []
   (load-todos)
-  (refresh-data)
   (add-event-listeners))
 
 ;; Launch window-load-handler when window loads
