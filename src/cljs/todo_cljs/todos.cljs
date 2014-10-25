@@ -16,7 +16,7 @@
 
 (declare rerender)
 
-(add-watch todo-list ::refresh-data
+(add-watch todo-list ::rerender
            (fn [k a o n]
              (rerender o n)))
 
