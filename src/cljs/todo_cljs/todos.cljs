@@ -94,12 +94,9 @@
       (update-attr id :title text))))
 
 (defn redraw-todos-ui []
-  (set! (.-innerHTML (by-id "todo-list")) "")
-  ;; (dom/remove-children "todo-list")) ???
+  (dom/remove-children "todo-list")
   (dom/set-value (by-id "new-todo") "")
-  (dorun ;; materialize lazy list returned by map below
-   (map
-    (fn [todo]
+  (doseq [todo @todo-list]
       (let [
         id          (todo :id)
         li          (elemt "li" {:id (str "li_" id)})
@@ -127,8 +124,7 @@
             (dom/set-properties li {"class" "complete"})
             (dom/set-properties checkbox {"checked" true})))
 
-        (dom/append (by-id "todo-list") li)))
-    @todo-list)))
+        (dom/append (by-id "todo-list") li))))
 
 (defn draw-todo-count []
   (let [stat (stats)
@@ -165,11 +161,11 @@
 
 (defn rerender [o n]
   ;; calculate some diff between old and new and do clever update...
-  ;; or just re-render everything, what the hell
-  (save-todos)
-  (redraw-todos-ui)
-  (redraw-status-ui)
-  (change-toggle-all-checkbox-state))
+  (when (not= o n)
+    (save-todos)
+    (redraw-todos-ui)
+    (redraw-status-ui)
+    (change-toggle-all-checkbox-state)))
 
 ;; This get-uuid fn is almost equiv to the original
 (defn get-uuid []
@@ -185,11 +181,10 @@
 (defn add-todo [text]
   (let [tt (.trim text)]
     (if (seq tt)
-      (do
-        (swap! todo-list conj
-               {:id (get-uuid)
-                :title tt
-                :completed false})))))
+      (swap! todo-list conj
+             {:id (get-uuid)
+              :title tt
+              :completed false}))))
 
 (defn new-todo-handler [ev]
   (if (= ENTER_KEY (.-keyCode ev))
@@ -223,3 +218,11 @@
 ;; (add-todo "two")
 ;; (add-todo "three")
 ;; (map #(js/alert %) @todo-list)
+
+;(go (loop []
+;      (if-let [url (<! event-ch)]
+;        (let [response (<! (http/get url))
+;              body (:body response)]
+;          (swap! app-state assoc :data body)
+;          (recur))
+;        (println "terminating loop..."))))
