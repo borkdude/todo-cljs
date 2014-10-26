@@ -8,7 +8,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2342"]
                  [weasel "0.4.2-SNAPSHOT"]
-                 [com.cemerick/piggieback "0.1.3"]]
+                 [com.cemerick/piggieback "0.1.3"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
 
   :profiles {:dev {:repl-options {:init-ns todo-cljs.brepl

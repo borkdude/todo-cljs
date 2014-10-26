@@ -1,6 +1,9 @@
 (ns todo_cljs.todos
-  (:require [clojure.browser.dom  :as dom]
+  (:require-macros [cljs.core.async.macros :refer (go)])
+  (:require [clojure.browser.dom  :as dom :refer (element)]
             [clojure.browser.event :as ev]
+            [clojure.set :as set]
+            [cljs.core.async :refer (<! chan)]
             [goog.events :as events]
             [weasel.repl :as ws-repl]))
 
@@ -35,9 +38,6 @@
 
 ;; HELPER: shortcut for dom/get-element
 (defn by-id [id] (dom/get-element id))
-
-;; HELPER: shortcut for dom/element
-(defn elemt [tag params] (dom/element tag params))
 
 ;; HELPER: :total tasks, :completed tasks and :left tasks (not completed)
 (defn stats []
@@ -99,13 +99,13 @@
   (doseq [todo @todo-list]
       (let [
         id          (todo :id)
-        li          (elemt "li" {:id (str "li_" id)})
-        checkbox    (elemt "input" {"class" "toggle" "data-todo-id" id
+        li          (element "li" {:id (str "li_" id)})
+        checkbox    (element "input" {"class" "toggle" "data-todo-id" id
                                    "type" "checkbox"})
-        label       (elemt "label" {"data-todo-id" id})
-        delete-link (elemt "button" {"class" "destroy" "data-todo-id" id})
-        div-display (elemt "div" {"class" "view" "data-todo-id" id})
-        input-todo  (elemt "input" {:id (str "input_" id) "class" "edit"})]
+        label       (element "label" {"data-todo-id" id})
+        delete-link (element "button" {"class" "destroy" "data-todo-id" id})
+        div-display (element "div" {"class" "view" "data-todo-id" id})
+        input-todo  (element "input" {:id (str "input_" id) "class" "edit"})]
 
         (dom/set-text label (todo :title))
         (dom/set-value input-todo (todo :title))
@@ -161,11 +161,16 @@
 
 (defn rerender [o n]
   ;; calculate some diff between old and new and do clever update...
-  (when (not= o n)
-    (save-todos)
-    (redraw-todos-ui)
-    (redraw-status-ui)
-    (change-toggle-all-checkbox-state)))
+  (let [diff-o (set/difference (set o) (set n))
+        diff-n (set/difference (set n) (set o))]
+    (println "diff-o" diff-o)
+    (println "diff-n" diff-n)
+    ;; for now just naive rerendering
+    (when (not= o n)
+      (save-todos)
+      (redraw-todos-ui)
+      (redraw-status-ui)
+      (change-toggle-all-checkbox-state))))
 
 ;; This get-uuid fn is almost equiv to the original
 (defn get-uuid []
@@ -219,10 +224,3 @@
 ;; (add-todo "three")
 ;; (map #(js/alert %) @todo-list)
 
-;(go (loop []
-;      (if-let [url (<! event-ch)]
-;        (let [response (<! (http/get url))
-;              body (:body response)]
-;          (swap! app-state assoc :data body)
-;          (recur))
-;        (println "terminating loop..."))))
